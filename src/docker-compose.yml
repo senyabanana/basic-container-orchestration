@@ -1,0 +1,92 @@
+services:
+  postgres:
+    image: senyablat/postgres:latest
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: users_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+  rabbitmq:
+    image: senyablat/rabbitmq:latest
+    restart: always
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+
+  session-service:
+    image: senyablat/session-service:latest
+    ports:
+      - "8081:8081"
+    depends_on:
+      - postgres
+
+  hotel-service:
+    image: senyablat/hotel-service:latest
+    ports:
+      - "8082:8082"
+    depends_on:
+      - postgres
+
+  payment-service:
+    image: senyablat/payment-service:latest
+    ports:
+      - "8084:8084"
+    depends_on:
+      - postgres
+
+  loyalty-service:
+    image: senyablat/loyalty-service:latest
+    ports:
+      - "8085:8085"
+    depends_on:
+      - postgres
+
+  report-service:
+    image: senyablat/report-service:latest
+    ports:
+      - "8086:8086"
+    depends_on:
+      - postgres
+      - rabbitmq
+
+  booking-service:
+    image: senyablat/booking-service:latest
+    ports:
+      - "8083:8083"
+    depends_on:
+      - postgres
+      - rabbitmq
+      - hotel-service
+      - payment-service
+      - loyalty-service
+
+  gateway-service:
+    image: senyablat/gateway-service:latest
+    ports:
+      - "8087:8087"
+    depends_on:
+      - session-service
+      - hotel-service
+      - booking-service
+      - payment-service
+      - loyalty-service
+      - report-service
+
+  nginx:
+    image: senyablat/nginx-service:latest
+    ports:
+      - "80:80"
+    depends_on:
+      - gateway-service
+      - session-service
+
+volumes:
+  postgres-data:
+  rabbitmq-data:
